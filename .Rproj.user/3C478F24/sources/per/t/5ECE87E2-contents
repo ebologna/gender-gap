@@ -1,0 +1,32 @@
+---
+title: "Argentina: brecha de género"
+author: "Eduardo Bologna"
+date: "10/3/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Se compara la evolución de la inserción laboral de mujeres y varones en los agrlomerados urbanos de Argentina durate el período 2004-2018. Para hommogeneizar la comparaciónn, solo se toma el primer semestre de cada año.  
+
+# Preliminares
+El INDEC pone a disposición las bases de microdatos de la EPH en su sitio  Para el período considerado, algunas estpan en formato .dbf y otras en .txt. Para la lectura de las bases, se definen dos listas que contienen las ubicaciones de las bases en cada uno de los formatos.
+```{r}
+ubicaciones.bases.dbf=list(
+  "individualprimer trimestre 2004 a 2015\\Ind_t104.dbf","individualprimer trimestre 2004 a 2015\\Ind_t105.dbf",
+  "individualprimer trimestre 2004 a 2015\\Ind_t106.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t107.dbf",
+  "individualprimer trimestre 2004 a 2015\\Ind_t108.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t109.dbf",
+  "individualprimer trimestre 2004 a 2015\\Ind_t110.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t111.dbf",
+  "individualprimer trimestre 2004 a 2015\\Ind_t112.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t113.dbf",
+  "individualprimer trimestre 2004 a 2015\\Ind_t114.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t115.dbf")
+
+ubicaciones.bases.txt=list(
+  "individualprimer trimestre 2004 a 2015\\usu_individual_t316.txt",
+  "individualprimer trimestre 2004 a 2015\\usu_individual_t117.txt",
+  "individualprimer trimestre 2004 a 2015\\usu_individual_t118.txt")
+
+```
+

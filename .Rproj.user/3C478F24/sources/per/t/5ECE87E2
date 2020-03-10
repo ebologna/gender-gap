@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1583864877745.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "174287902",
+    "id" : "5ECE87E2",
+    "lastKnownWriteTime" : 1583865477,
+    "last_content_update" : 1583865477858,
+    "path" : "~/GitHub/gender-gap/gender_gap.Rmd",
+    "project_path" : "gender_gap.Rmd",
+    "properties" : {
+        "cursorPosition" : "32,0",
+        "scrollLine" : "20",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

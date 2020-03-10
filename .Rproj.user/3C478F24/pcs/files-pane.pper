@@ -1,0 +1,9 @@
+{
+    "path" : "~/GitHub/gender-gap",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
