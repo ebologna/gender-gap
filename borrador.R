@@ -6,17 +6,17 @@ library(scales)
 ##condicion de actividad por educacion y sexo
 
 ubicaciones.bases.dbf=list(
-  "individualprimer trimestre 2004 a 2015\\Ind_t104.dbf","individualprimer trimestre 2004 a 2015\\Ind_t105.dbf",
-  "individualprimer trimestre 2004 a 2015\\Ind_t106.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t107.dbf",
-  "individualprimer trimestre 2004 a 2015\\Ind_t108.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t109.dbf",
-  "individualprimer trimestre 2004 a 2015\\Ind_t110.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t111.dbf",
-  "individualprimer trimestre 2004 a 2015\\Ind_t112.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t113.dbf",
-  "individualprimer trimestre 2004 a 2015\\Ind_t114.dbf", "individualprimer trimestre 2004 a 2015\\Ind_t115.dbf")
+  "archivosINDEC\\Ind_t104.dbf","archivosINDEC\\Ind_t105.dbf",
+  "archivosINDEC\\Ind_t106.dbf", "archivosINDEC\\Ind_t107.dbf",
+  "archivosINDEC\\Ind_t108.dbf", "archivosINDEC\\Ind_t109.dbf",
+  "archivosINDEC\\Ind_t110.dbf", "archivosINDEC\\Ind_t111.dbf",
+  "archivosINDEC\\Ind_t112.dbf", "archivosINDEC\\Ind_t113.dbf",
+  "archivosINDEC\\Ind_t114.dbf", "archivosINDEC\\Ind_t115.dbf")
 
 ubicaciones.bases.txt=list(
-  "individualprimer trimestre 2004 a 2015\\usu_individual_t316.txt",
-  "individualprimer trimestre 2004 a 2015\\usu_individual_t117.txt",
-  "individualprimer trimestre 2004 a 2015\\usu_individual_t118.txt")
+  "archivosINDEC\\usu_individual_t316.txt",
+  "archivosINDEC\\usu_individual_t117.txt",
+  "archivosINDEC\\usu_individual_t118.txt")
 
 eph.dbf=vector("list",12)
 for(i  in 1:12) eph.dbf[[i]]=read.dbf(ubicaciones.bases.dbf[[i]])
@@ -91,11 +91,12 @@ for (i in 1:15) {
           plot.title = element_text(hjust = 0.5))+
     facet_grid(sexo~.)
 }
-graficos.condact[[15]]
+graficos.condact[[1]]
 
 for(i in 1:15){ 
   ggsave(filename = paste("condiciondeactividad", eph[[i]]$ANO4,
                           ".png"),
+         path = "graficos\\condicion_actividad",
          plot = graficos.condact[[i]], device = "png",
          scale = 1.7)
 }
@@ -111,7 +112,8 @@ solo.activos=vector("list", 15)
 for (i in 1:15) {
   solo.activos[[i]]=subset(eph[[i]],
                            eph[[i]]$ESTADO==1 | eph[[i]]$ESTADO==2)
-  solo.activos[[i]]$actividad=factor(solo.activos[[i]]$actividad)
+  solo.activos[[i]]$actividad=factor(solo.activos[[i]]$actividad) 
+  # para descartar el nivel no usado
 }
 
 props.d=vector("list",15)
@@ -151,7 +153,8 @@ for (i in 1:15) {
           plot.title = element_text(hjust = 0.5))+
     facet_grid(sexo~.)
 }
-graficos.desocupacion[[15]]
+
+
 for(i in 1:15){ 
   ggsave(filename = paste("desocupación", eph[[i]]$ANO4,
                           ".png"),
@@ -244,7 +247,7 @@ precariedad.graficos[[i]] =ggplot(precariedad.sexo.educacion[[i]])+
   ylab("Sexo")+
   labs(
     title="Proporción de asalariados precarios según sexo y nivel de educación",
-    subtitle = "Argentina. Aglomerados Urbanos primer trimestre 2018",
+    subtitle = paste("Argentina. Aglomerados Urbanos primer trimestre",eph[[i]]$ANO4),
     caption="Fuente: Encuesta Permanente de Hogares, INDEC www.indec.gob.ar")+
   theme_economist(base_family = "serif", base_size = 9)
 }
@@ -295,6 +298,8 @@ composicion.deciles
 ggsave(filename = "composiciondeciles.png",
        plot = composicion.deciles, device = "png",
        scale = 1.7)
+
+##### hasta acá pasado al rmd
 
 ##diferencias brutas
 asalariados=vector("list",15)
