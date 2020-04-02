@@ -59,9 +59,12 @@ Se reúnen todas las bases en un único vector
 eph=vector("list",15)
 eph=c(eph.dbf,eph.txt)
 
+# para cálculos con metodología INDEC:
+originales<-vector("list",15)
+originales<-eph
 ```
 
-Se define `sexo` como factor y sus niveles, se restringen las bases a los casos válidos de la variable `ESTADO` y a los mayores ed 14 años de edad, se define `actividad` como la rotulación de `ESTADO`, se define `educacion` como `NIVEL_ED` con el orden corregido y rotulada.
+Se define `sexo` como factor y sus niveles, se restringen las bases a los casos válidos de la variable `ESTADO` y a los mayores de 14 años de edad, se define `actividad` como la rotulación de `ESTADO`, se define `educacion` como `NIVEL_ED` con el orden corregido y rotulada.
 ````{r}
 for (i in 1:15) {
   eph[[i]]$sexo=as.factor(eph[[i]]$CH04)
