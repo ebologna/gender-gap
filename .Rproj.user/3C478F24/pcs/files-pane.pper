@@ -1,6 +1,10 @@
 {
-    "path" : "~/GitHub/gender-gap/archivosINDEC",
+    "path" : "~/GitHub/gender-gap",
     "sortOrder" : [
+        {
+            "ascending" : false,
+            "columnIndex" : 4
+        },
         {
             "ascending" : true,
             "columnIndex" : 2

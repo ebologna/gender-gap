@@ -1,0 +1,705 @@
+---
+title: "Tasas de actividad por sexos y niveles de educación"
+subtitle: "Aglomerados Urbanos de Argentina. Período 2004-2018"
+author: "Eduardo Bologna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Los paquetes necesarios:
+```{r warning=FALSE}
+library(questionr)
+library(ggplot2)
+library(ggthemes)
+library(ggsci)
+library(scales)
+library(foreign)
+```
+
+Lectura del directorio donde se encuentran las bases de datos, se usa primer trimestre desde 2004 hasta 2018. El INDEC ofrece las bases en formato dbf y txt, por lo que hay que leer por separado
+
+```{r}
+ubicaciones.bases.dbf=list(
+  "archivosINDEC\\Ind_t104.dbf","archivosINDEC\\Ind_t105.dbf",
+  "archivosINDEC\\Ind_t106.dbf", "archivosINDEC\\Ind_t107.dbf",
+  "archivosINDEC\\Ind_t108.dbf", "archivosINDEC\\Ind_t109.dbf",
+  "archivosINDEC\\Ind_t110.dbf", "archivosINDEC\\Ind_t111.dbf",
+  "archivosINDEC\\Ind_t112.dbf", "archivosINDEC\\Ind_t113.dbf",
+  "archivosINDEC\\Ind_t114.dbf", "archivosINDEC\\Ind_t115.dbf")
+
+ubicaciones.bases.txt=list(
+  "archivosINDEC\\usu_individual_t316.txt",
+  "archivosINDEC\\usu_individual_t117.txt",
+  "archivosINDEC\\usu_individual_t118.txt")
+```
+
+Se crea una lista para cada conjunto de bases y luego una sola que las aloja a todas:
+
+```{r}
+eph.dbf=vector("list",12)
+for(i  in 1:12) eph.dbf[[i]]=read.dbf(ubicaciones.bases.dbf[[i]])
+
+eph.txt=vector("list",3)
+for(i  in 1:3) eph.txt[[i]]=read.csv(ubicaciones.bases.txt[[i]], sep = ";")
+
+for(i  in 1:3) eph.txt[[i]]$PP08D1[is.na(eph.txt[[i]]$PP08D1)]=0
+
+eph=vector("list",15)
+eph=c(eph.dbf,eph.txt)
+
+```
+
+
+Se retienen las personas de 18 años y más y se define una nueva lista (originales) para preservar los datos ya leídos:
+
+```{r}
+eph_mayor17<-vector("list",15)
+for (i in 1:15) {
+  eph_mayor17[[i]]=subset(eph[[i]], eph[[i]]$CH06>17)
+}
+
+originales<-vector("list",15)
+originales<-eph_mayor17
+
+```
+
+Se definen las variables *sexo* y *educacion*, se etiquetan y se ordenan los *niveles de educacion*:
+
+```{r}
+for (i in 1:15) {
+  originales[[i]]$sexo=as.factor(originales[[i]]$CH04)
+  levels(originales[[i]]$sexo)=c("varones", "mujeres")
+  originales[[i]]$educacion=factor(originales[[i]]$NIVEL_ED,
+                                   levels(factor(originales[[i]]$NIVEL_ED))[c(7,1:6)])
+  levels(originales[[i]]$educacion)=c("Sin instruccion",
+                                      "Primaria Incompleta",
+                                      "Primaria Completa","Secundaria Incompleta",
+                                      "Secundaria Completa",
+                                      "Universitaria Incompleta",
+                                      "Universitaria Completa")
+}
+```
+
+
+Se definen listas que contienen subconjuntos de las bases, según sexo y nivel de educacion. Se trata de:  
+- una lista para ambos sexos con todos los niveles de educacion juntos (una lista)  
+- una para cada sexo, con todos los niveles de educacion juntos (dos listas)  
+- una para cada nivel de educacion para cada sexo (14 listas).  
+
+Cada lista tiene 15 elementos que corresponden a las EPH 2004-2018:
+
+```{r}
+varones<-vector("list",15)
+mujeres<-vector("list",15)
+
+varones_Sin_instruccion<-vector("list",15)
+varones_Primaria_Incompleta<-vector("list",15)
+varones_Primaria_Completa<-vector("list",15)
+varones_Secundaria_Incompleta<-vector("list",15)
+varones_Secundaria_Completa<-vector("list",15)
+varones_Universitaria_Incompleta<-vector("list",15)
+varones_Universitaria_Completa<-vector("list",15)
+mujeres_Sin_instruccion<-vector("list",15)
+mujeres_Primaria_Incompleta<-vector("list",15)
+mujeres_Primaria_Completa<-vector("list",15)
+mujeres_Secundaria_Incompleta<-vector("list",15)
+mujeres_Secundaria_Completa<-vector("list",15)
+mujeres_Universitaria_Incompleta<-vector("list",15)
+mujeres_Universitaria_Completa<-vector("list",15)
+
+for (i in 1:15) {
+  varones[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones")
+}
+for (i in 1:15) {
+  mujeres[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres")
+}
+
+for (i in 1:15) {
+  varones_Sin_instruccion[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Sin instruccion")
+}
+
+for (i in 1:15) {
+  mujeres_Sin_instruccion[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Sin instruccion")
+}
+
+for (i in 1:15) {
+  varones_Primaria_Incompleta[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Primaria Incompleta")
+}
+
+for (i in 1:15) {
+  mujeres_Primaria_Incompleta[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Primaria Incompleta")
+}
+
+for (i in 1:15) {
+  varones_Primaria_Completa[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Primaria Completa")
+}
+
+for (i in 1:15) {
+  mujeres_Primaria_Completa[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Primaria Completa")
+}
+
+for (i in 1:15) {
+  varones_Secundaria_Incompleta[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Secundaria Incompleta")
+}
+
+for (i in 1:15) {
+  mujeres_Secundaria_Incompleta[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Secundaria Incompleta")
+}
+
+for (i in 1:15) {
+  varones_Secundaria_Completa[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Secundaria Completa")
+}
+
+for (i in 1:15) {
+  mujeres_Secundaria_Completa[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Secundaria Completa")
+}
+
+for (i in 1:15) {
+  varones_Universitaria_Incompleta[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Universitaria Incompleta")
+}
+
+for (i in 1:15) {
+  mujeres_Universitaria_Incompleta[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Universitaria Incompleta")
+}
+
+for (i in 1:15) {
+  varones_Universitaria_Completa[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="varones" &
+             originales[[i]]$educacion=="Universitaria Completa")
+}
+
+for (i in 1:15) {
+  mujeres_Universitaria_Completa[[i]]<-
+    subset(originales[[i]],
+           originales[[i]]$sexo=="mujeres" &
+             originales[[i]]$educacion=="Universitaria Completa")
+}
+
+```
+
+Se generan tablas univariadas de la variable *ESTADO*, con categorías ocupade, desocupade, inactive; ponderadas por la variable *PONDERA*. Cada una de las 17 listas tiene 15 tablas, que se transforman en matrices de datos:
+
+```{r}
+# todos
+tabla_estado<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado[[i]]<-addmargins(
+    wtd.table(
+      originales[[i]]$ESTADO,
+      weights = originales[[i]]$PONDERA))
+  tabla_estado[[i]]<-
+    as.data.frame(tabla_estado[[i]])
+}
+
+# varones
+tabla_estado_varones<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones[[i]]<-addmargins(
+    wtd.table(
+      varones[[i]]$ESTADO,
+      weights = varones[[i]]$PONDERA))
+  tabla_estado_varones[[i]]<-
+    as.data.frame(tabla_estado_varones[[i]])
+}
+
+# mujeres
+tabla_estado_mujeres<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres[[i]]<-addmargins(
+    wtd.table(
+      mujeres[[i]]$ESTADO,
+      weights = mujeres[[i]]$PONDERA))
+  tabla_estado_mujeres[[i]]<-
+    as.data.frame(tabla_estado_mujeres[[i]])
+}
+
+# varones_Sin_instruccion
+tabla_estado_varones_Sin_instruccion<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Sin_instruccion[[i]]<-addmargins(
+    wtd.table(
+      varones_Sin_instruccion[[i]]$ESTADO,
+      weights = varones_Sin_instruccion[[i]]$PONDERA))
+  tabla_estado_varones_Sin_instruccion[[i]]<-
+    as.data.frame(tabla_estado_varones_Sin_instruccion[[i]])
+}
+
+# mujeres_Sin_instruccion
+tabla_estado_mujeres_Sin_instruccion<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Sin_instruccion[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Sin_instruccion[[i]]$ESTADO,
+      weights = mujeres_Sin_instruccion[[i]]$PONDERA))
+  tabla_estado_mujeres_Sin_instruccion[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Sin_instruccion[[i]])
+}
+
+# varones_Primaria_Incompleta
+tabla_estado_varones_Primaria_Incompleta<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Primaria_Incompleta[[i]]<-addmargins(
+    wtd.table(
+      varones_Primaria_Incompleta[[i]]$ESTADO,
+      weights = varones_Primaria_Incompleta[[i]]$PONDERA))
+  tabla_estado_varones_Primaria_Incompleta[[i]]<-
+    as.data.frame(tabla_estado_varones_Primaria_Incompleta[[i]])
+}
+
+# mujeres_Primaria_Incompleta
+tabla_estado_mujeres_Primaria_Incompleta<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Primaria_Incompleta[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Primaria_Incompleta[[i]]$ESTADO,
+      weights = mujeres_Primaria_Incompleta[[i]]$PONDERA))
+  tabla_estado_mujeres_Primaria_Incompleta[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Primaria_Incompleta[[i]])
+}
+
+# varones_Primaria_Completa
+tabla_estado_varones_Primaria_Completa<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Primaria_Completa[[i]]<-addmargins(
+    wtd.table(
+      varones_Primaria_Completa[[i]]$ESTADO,
+      weights = varones_Primaria_Completa[[i]]$PONDERA))
+  tabla_estado_varones_Primaria_Completa[[i]]<-
+    as.data.frame(tabla_estado_varones_Primaria_Completa[[i]])
+}
+
+# mujeres_Primaria_Completa
+tabla_estado_mujeres_Primaria_Completa<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Primaria_Completa[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Primaria_Completa[[i]]$ESTADO,
+      weights = mujeres_Primaria_Completa[[i]]$PONDERA))
+  tabla_estado_mujeres_Primaria_Completa[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Primaria_Completa[[i]])
+}
+
+# varones_Secundaria_Incompleta
+tabla_estado_varones_Secundaria_Incompleta<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Secundaria_Incompleta[[i]]<-addmargins(
+    wtd.table(
+      varones_Secundaria_Incompleta[[i]]$ESTADO,
+      weights = varones_Secundaria_Incompleta[[i]]$PONDERA))
+  tabla_estado_varones_Secundaria_Incompleta[[i]]<-
+    as.data.frame(tabla_estado_varones_Secundaria_Incompleta[[i]])
+}
+
+# mujeres_Secundaria_Incompleta
+tabla_estado_mujeres_Secundaria_Incompleta<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Secundaria_Incompleta[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Secundaria_Incompleta[[i]]$ESTADO,
+      weights = mujeres_Secundaria_Incompleta[[i]]$PONDERA))
+  tabla_estado_mujeres_Secundaria_Incompleta[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Secundaria_Incompleta[[i]])
+}
+
+# varones_Secundaria_Completa
+tabla_estado_varones_Secundaria_Completa<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Secundaria_Completa[[i]]<-addmargins(
+    wtd.table(
+      varones_Secundaria_Completa[[i]]$ESTADO,
+      weights = varones_Secundaria_Completa[[i]]$PONDERA))
+  tabla_estado_varones_Secundaria_Completa[[i]]<-
+    as.data.frame(tabla_estado_varones_Secundaria_Completa[[i]])
+}
+
+# mujeres_Secundaria_Completa
+tabla_estado_mujeres_Secundaria_Completa<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Secundaria_Completa[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Secundaria_Completa[[i]]$ESTADO,
+      weights = mujeres_Secundaria_Completa[[i]]$PONDERA))
+  tabla_estado_mujeres_Secundaria_Completa[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Secundaria_Completa[[i]])
+}
+
+# varones_Universitaria_Incompleta
+tabla_estado_varones_Universitaria_Incompleta<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Universitaria_Incompleta[[i]]<-addmargins(
+    wtd.table(
+      varones_Universitaria_Incompleta[[i]]$ESTADO,
+      weights = varones_Universitaria_Incompleta[[i]]$PONDERA))
+  tabla_estado_varones_Universitaria_Incompleta[[i]]<-
+    as.data.frame(tabla_estado_varones_Universitaria_Incompleta[[i]])
+}
+
+# mujeres_Universitaria_Incompleta
+tabla_estado_mujeres_Universitaria_Incompleta<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Universitaria_Incompleta[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Universitaria_Incompleta[[i]]$ESTADO,
+      weights = mujeres_Universitaria_Incompleta[[i]]$PONDERA))
+  tabla_estado_mujeres_Universitaria_Incompleta[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Universitaria_Incompleta[[i]])
+}
+
+# varones_Universitaria_Completa
+tabla_estado_varones_Universitaria_Completa<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_varones_Universitaria_Completa[[i]]<-addmargins(
+    wtd.table(
+      varones_Universitaria_Completa[[i]]$ESTADO,
+      weights = varones_Universitaria_Completa[[i]]$PONDERA))
+  tabla_estado_varones_Universitaria_Completa[[i]]<-
+    as.data.frame(tabla_estado_varones_Universitaria_Completa[[i]])
+}
+
+# mujeres_Universitaria_Completa
+tabla_estado_mujeres_Universitaria_Completa<-vector("list",15)
+for (i in 1:15) {
+  tabla_estado_mujeres_Universitaria_Completa[[i]]<-addmargins(
+    wtd.table(
+      mujeres_Universitaria_Completa[[i]]$ESTADO,
+      weights = mujeres_Universitaria_Completa[[i]]$PONDERA))
+  tabla_estado_mujeres_Universitaria_Completa[[i]]<-
+    as.data.frame(tabla_estado_mujeres_Universitaria_Completa[[i]])
+}
+
+```
+
+A partir de las tablas univariadas, se calculan las 15 tasas de actividad para cada una de las 17 listas, como el cociente entre ocupados más desocupados y el total, salvo para los años 2010, 2012, 2013 y 2016 (listas 7, 9, 10 y 13) en los que no hay mujeres sin instrucción desocupadas:
+
+```{r}
+# todos
+tasas_actividad<-vector()
+for (i in 1:15) {
+  tasas_actividad[i]<-
+    (tabla_estado[[i]]$Freq[tabla_estado[[i]]$Var1==1]+
+       tabla_estado[[i]]$Freq[tabla_estado[[i]]$Var1==2])/
+    tabla_estado[[i]]$Freq[tabla_estado[[i]]$Var1=="Sum"]
+}
+
+# varones
+tasas_actividad_varones<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones[i]<-
+    (tabla_estado_varones[[i]]$Freq[tabla_estado_varones[[i]]$Var1==1]+
+       tabla_estado_varones[[i]]$Freq[tabla_estado_varones[[i]]$Var1==2])/
+    tabla_estado_varones[[i]]$Freq[tabla_estado_varones[[i]]$Var1=="Sum"]
+}
+
+# mujeres
+tasas_actividad_mujeres<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres[i]<-
+    (tabla_estado_mujeres[[i]]$Freq[tabla_estado_mujeres[[i]]$Var1==1]+
+       tabla_estado_mujeres[[i]]$Freq[tabla_estado_mujeres[[i]]$Var1==2])/
+    tabla_estado_mujeres[[i]]$Freq[tabla_estado_mujeres[[i]]$Var1=="Sum"]
+}
+
+# varones_Sin_instruccion
+tasas_actividad_varones_Sin_instruccion<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Sin_instruccion[i]<-
+    (tabla_estado_varones_Sin_instruccion[[i]]$Freq[tabla_estado_varones_Sin_instruccion[[i]]$Var1==1]+
+       tabla_estado_varones_Sin_instruccion[[i]]$Freq[tabla_estado_varones_Sin_instruccion[[i]]$Var1==2])/
+    tabla_estado_varones_Sin_instruccion[[i]]$Freq[tabla_estado_varones_Sin_instruccion[[i]]$Var1=="Sum"]
+}
+
+# mujeres_Sin_instruccion
+
+tasas_actividad_mujeres_Sin_instruccion<-vector()
+
+for (i in 1:6) {
+  tasas_actividad_mujeres_Sin_instruccion[i]<-
+    (tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1==1]+
+       tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1==2])/
+    tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1=="Sum"]
+}
+
+tasas_actividad_mujeres_Sin_instruccion[7]<-
+  tabla_estado_mujeres_Sin_instruccion[[7]]$Freq[tabla_estado_mujeres_Sin_instruccion[[7]]$Var1==1]/
+  tabla_estado_mujeres_Sin_instruccion[[7]]$Freq[tabla_estado_mujeres_Sin_instruccion[[7]]$Var1=="Sum"]
+
+tasas_actividad_mujeres_Sin_instruccion[8]<-
+  (tabla_estado_mujeres_Sin_instruccion[[8]]$Freq[tabla_estado_mujeres_Sin_instruccion[[8]]$Var1==1]+
+     tabla_estado_mujeres_Sin_instruccion[[8]]$Freq[tabla_estado_mujeres_Sin_instruccion[[8]]$Var1==2])/
+  tabla_estado_mujeres_Sin_instruccion[[8]]$Freq[tabla_estado_mujeres_Sin_instruccion[[8]]$Var1=="Sum"]
+
+tasas_actividad_mujeres_Sin_instruccion[9]<-
+  (tabla_estado_mujeres_Sin_instruccion[[9]]$Freq[tabla_estado_mujeres_Sin_instruccion[[9]]$Var1==1])/
+  tabla_estado_mujeres_Sin_instruccion[[9]]$Freq[tabla_estado_mujeres_Sin_instruccion[[9]]$Var1=="Sum"]
+
+tasas_actividad_mujeres_Sin_instruccion[10]<-
+  (tabla_estado_mujeres_Sin_instruccion[[10]]$Freq[tabla_estado_mujeres_Sin_instruccion[[10]]$Var1==1])/
+  tabla_estado_mujeres_Sin_instruccion[[10]]$Freq[tabla_estado_mujeres_Sin_instruccion[[10]]$Var1=="Sum"]
+
+for (i in 11:12) {
+  tasas_actividad_mujeres_Sin_instruccion[i]<-
+    (tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1==1]+
+       tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1==2])/
+    tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1=="Sum"]
+}
+
+tasas_actividad_mujeres_Sin_instruccion[13]<-
+  (tabla_estado_mujeres_Sin_instruccion[[13]]$Freq[tabla_estado_mujeres_Sin_instruccion[[13]]$Var1==1])/
+  tabla_estado_mujeres_Sin_instruccion[[13]]$Freq[tabla_estado_mujeres_Sin_instruccion[[13]]$Var1=="Sum"]
+
+for (i in 14:15) {
+  tasas_actividad_mujeres_Sin_instruccion[i]<-
+    (tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1==1]+
+       tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1==2])/
+    tabla_estado_mujeres_Sin_instruccion[[i]]$Freq[tabla_estado_mujeres_Sin_instruccion[[i]]$Var1=="Sum"]
+}
+
+# varones_Primaria_Incompleta
+tasas_actividad_varones_Primaria_Incompleta<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Primaria_Incompleta[i]<-
+    (tabla_estado_varones_Primaria_Incompleta[[i]]$Freq[tabla_estado_varones_Primaria_Incompleta[[i]]$Var1==1]+
+       tabla_estado_varones_Primaria_Incompleta[[i]]$Freq[tabla_estado_varones_Primaria_Incompleta[[i]]$Var1==2])/
+    tabla_estado_varones_Primaria_Incompleta[[i]]$Freq[tabla_estado_varones_Primaria_Incompleta[[i]]$Var1=="Sum"]
+}
+
+# mujeres_Primaria_Incompleta
+tasas_actividad_mujeres_Primaria_Incompleta<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres_Primaria_Incompleta[i]<-
+    (tabla_estado_mujeres_Primaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Primaria_Incompleta[[i]]$Var1==1]+
+       tabla_estado_mujeres_Primaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Primaria_Incompleta[[i]]$Var1==2])/
+    tabla_estado_mujeres_Primaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Primaria_Incompleta[[i]]$Var1=="Sum"]
+}
+
+
+# varones_Primaria_Completa
+tasas_actividad_varones_Primaria_Completa<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Primaria_Completa[i]<-
+    (tabla_estado_varones_Primaria_Completa[[i]]$Freq[tabla_estado_varones_Primaria_Completa[[i]]$Var1==1]+
+       tabla_estado_varones_Primaria_Completa[[i]]$Freq[tabla_estado_varones_Primaria_Completa[[i]]$Var1==2])/
+    tabla_estado_varones_Primaria_Completa[[i]]$Freq[tabla_estado_varones_Primaria_Completa[[i]]$Var1=="Sum"]
+}
+
+# mujeres_Primaria_Completa
+tasas_actividad_mujeres_Primaria_Completa<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres_Primaria_Completa[i]<-
+    (tabla_estado_mujeres_Primaria_Completa[[i]]$Freq[tabla_estado_mujeres_Primaria_Completa[[i]]$Var1==1]+
+       tabla_estado_mujeres_Primaria_Completa[[i]]$Freq[tabla_estado_mujeres_Primaria_Completa[[i]]$Var1==2])/
+    tabla_estado_mujeres_Primaria_Completa[[i]]$Freq[tabla_estado_mujeres_Primaria_Completa[[i]]$Var1=="Sum"]
+}
+
+# varones_Secundaria_Incompleta
+tasas_actividad_varones_Secundaria_Incompleta<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Secundaria_Incompleta[i]<-
+    (tabla_estado_varones_Secundaria_Incompleta[[i]]$Freq[tabla_estado_varones_Secundaria_Incompleta[[i]]$Var1==1]+
+       tabla_estado_varones_Secundaria_Incompleta[[i]]$Freq[tabla_estado_varones_Secundaria_Incompleta[[i]]$Var1==2])/
+    tabla_estado_varones_Secundaria_Incompleta[[i]]$Freq[tabla_estado_varones_Secundaria_Incompleta[[i]]$Var1=="Sum"]
+}
+
+
+# mujeres_Secundaria_Incompleta
+tasas_actividad_mujeres_Secundaria_Incompleta<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres_Secundaria_Incompleta[i]<-
+    (tabla_estado_mujeres_Secundaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Secundaria_Incompleta[[i]]$Var1==1]+
+       tabla_estado_mujeres_Secundaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Secundaria_Incompleta[[i]]$Var1==2])/
+    tabla_estado_mujeres_Secundaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Secundaria_Incompleta[[i]]$Var1=="Sum"]
+}
+
+
+# varones_Secundaria_Completa
+tasas_actividad_varones_Secundaria_Completa<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Secundaria_Completa[i]<-
+    (tabla_estado_varones_Secundaria_Completa[[i]]$Freq[tabla_estado_varones_Secundaria_Completa[[i]]$Var1==1]+
+       tabla_estado_varones_Secundaria_Completa[[i]]$Freq[tabla_estado_varones_Secundaria_Completa[[i]]$Var1==2])/
+    tabla_estado_varones_Secundaria_Completa[[i]]$Freq[tabla_estado_varones_Secundaria_Completa[[i]]$Var1=="Sum"]
+}
+
+# mujeres_Secundaria_Completa
+tasas_actividad_mujeres_Secundaria_Completa<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres_Secundaria_Completa[i]<-
+    (tabla_estado_mujeres_Secundaria_Completa[[i]]$Freq[tabla_estado_mujeres_Secundaria_Completa[[i]]$Var1==1]+
+       tabla_estado_mujeres_Secundaria_Completa[[i]]$Freq[tabla_estado_mujeres_Secundaria_Completa[[i]]$Var1==2])/
+    tabla_estado_mujeres_Secundaria_Completa[[i]]$Freq[tabla_estado_mujeres_Secundaria_Completa[[i]]$Var1=="Sum"]
+}
+
+# varones_Universitaria_Incompleta
+tasas_actividad_varones_Universitaria_Incompleta<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Universitaria_Incompleta[i]<-
+    (tabla_estado_varones_Universitaria_Incompleta[[i]]$Freq[tabla_estado_varones_Universitaria_Incompleta[[i]]$Var1==1]+
+       tabla_estado_varones_Universitaria_Incompleta[[i]]$Freq[tabla_estado_varones_Universitaria_Incompleta[[i]]$Var1==2])/
+    tabla_estado_varones_Universitaria_Incompleta[[i]]$Freq[tabla_estado_varones_Universitaria_Incompleta[[i]]$Var1=="Sum"]
+}
+
+# mujeres_Universitaria_Incompleta
+tasas_actividad_mujeres_Universitaria_Incompleta<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres_Universitaria_Incompleta[i]<-
+    (tabla_estado_mujeres_Universitaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Universitaria_Incompleta[[i]]$Var1==1]+
+       tabla_estado_mujeres_Universitaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Universitaria_Incompleta[[i]]$Var1==2])/
+    tabla_estado_mujeres_Universitaria_Incompleta[[i]]$Freq[tabla_estado_mujeres_Universitaria_Incompleta[[i]]$Var1=="Sum"]
+}
+
+# varones_Universitaria_Completa
+tasas_actividad_varones_Universitaria_Completa<-vector()
+for (i in 1:15) {
+  tasas_actividad_varones_Universitaria_Completa[i]<-
+    (tabla_estado_varones_Universitaria_Completa[[i]]$Freq[tabla_estado_varones_Universitaria_Completa[[i]]$Var1==1]+
+       tabla_estado_varones_Universitaria_Completa[[i]]$Freq[tabla_estado_varones_Universitaria_Completa[[i]]$Var1==2])/
+    tabla_estado_varones_Universitaria_Completa[[i]]$Freq[tabla_estado_varones_Universitaria_Completa[[i]]$Var1=="Sum"]
+}
+
+# mujeres_Universitaria_Completa
+tasas_actividad_mujeres_Universitaria_Completa<-vector()
+for (i in 1:15) {
+  tasas_actividad_mujeres_Universitaria_Completa[i]<-
+    (tabla_estado_mujeres_Universitaria_Completa[[i]]$Freq[tabla_estado_mujeres_Universitaria_Completa[[i]]$Var1==1]+
+       tabla_estado_mujeres_Universitaria_Completa[[i]]$Freq[tabla_estado_mujeres_Universitaria_Completa[[i]]$Var1==2])/
+    tabla_estado_mujeres_Universitaria_Completa[[i]]$Freq[tabla_estado_mujeres_Universitaria_Completa[[i]]$Var1=="Sum"]
+}
+```
+
+Se define el vector de años:
+```{r}
+anio<-2004:2018
+
+```
+
+Se construye la matriz
+
+```{r}
+matriz_tasas_actividad<-data.frame(anio, tasas_actividad,
+                                   tasas_actividad_varones,
+                                   tasas_actividad_mujeres,
+                                   tasas_actividad_varones_Sin_instruccion,
+                                   tasas_actividad_mujeres_Sin_instruccion,
+                                   tasas_actividad_varones_Primaria_Incompleta,
+                                   tasas_actividad_mujeres_Primaria_Incompleta,
+                                   tasas_actividad_varones_Primaria_Completa,
+                                   tasas_actividad_mujeres_Primaria_Completa,
+                                   tasas_actividad_varones_Secundaria_Incompleta,
+                                   tasas_actividad_mujeres_Secundaria_Incompleta,
+                                   tasas_actividad_varones_Secundaria_Completa,
+                                   tasas_actividad_mujeres_Secundaria_Completa,                               tasas_actividad_varones_Universitaria_Incompleta,
+                                tasas_actividad_mujeres_Universitaria_Incompleta,
+                                   tasas_actividad_varones_Universitaria_Completa,
+                                tasas_actividad_mujeres_Universitaria_Completa)
+```
+
+
+Se modifica el formato de la tabla
+
+```{r}
+tasas<-c(tasas_actividad, tasas_actividad_varones,
+         tasas_actividad_mujeres,
+         tasas_actividad_varones_Sin_instruccion,
+         tasas_actividad_mujeres_Sin_instruccion,
+         tasas_actividad_varones_Primaria_Incompleta,
+         tasas_actividad_mujeres_Primaria_Incompleta,
+         tasas_actividad_varones_Primaria_Completa,
+         tasas_actividad_mujeres_Primaria_Completa,
+         tasas_actividad_varones_Secundaria_Incompleta,
+         tasas_actividad_mujeres_Secundaria_Incompleta,
+         tasas_actividad_varones_Secundaria_Completa,
+         tasas_actividad_mujeres_Secundaria_Completa,
+         tasas_actividad_varones_Universitaria_Incompleta,
+         tasas_actividad_mujeres_Universitaria_Incompleta,
+         tasas_actividad_varones_Universitaria_Completa,
+         tasas_actividad_mujeres_Universitaria_Completa)
+
+sexo<-c(rep("ambos",15),rep(c(rep("varones",15), rep("mujeres",15)),8))
+
+educacion<-c(rep("todos",45), rep("sin instruccion",30),
+             rep("primaria incompleta",30), rep("primaria completa",30),
+             rep("secundaria incompleta",30), rep("secundaria completa",30),
+             rep("universitaria incompleta",30), rep("universitaria completa",30))
+
+anio<-c(rep(2004:2018, 17))
+
+tasas_de_actividad<-data.frame(anio, sexo, educacion,tasas)
+```
+
+Se ordena la variable educacion
+
+
+```{r}
+tasas_de_actividad$educacion_ordenada<-tasas_de_actividad$educacion
+
+tasas_de_actividad$educacion_ordenada <- 
+  factor(tasas_de_actividad$educacion_ordenada,
+         levels = c("sin instruccion", "primaria incompleta",
+                    "primaria completa","secundaria incompleta",
+                    "secundaria completa","universitaria incompleta",
+                    "universitaria completa",
+                    "todos"))
+```
+
+
+Se grafican las series con el año en el eje horizontal, las tasas en el vertical, el sexo mapeado al color de los puntos y las líneas, y se separa por niveles de educacion. Se elige una combinación de colores inspirada en las publicaciones de la Unversidad de Chicago (del paquete `ggsci`) y el tema diseñado por Edward Tufte (del paquete `ggthemes`):
+
+
+```{r}
+ggplot(subset(tasas_de_actividad,
+              tasas_de_actividad$sexo!="ambos" &
+                tasas_de_actividad$educacion_ordenada!="todos"))+
+  geom_point(aes(anio, tasas, col=sexo))+
+  labs(title = "Tasas de actividad por sexo y nivel de educación 2004-2018",
+       caption = "Fuente: INDEC (2018)")+
+  xlab("año")+ylab("tasas de actividad")+
+  geom_line(aes(anio, tasas, col=sexo))+
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,1))+
+  facet_wrap(educacion_ordenada~.)+scale_color_uchicago()+theme_tufte()
+```
+
