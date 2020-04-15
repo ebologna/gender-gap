@@ -703,3 +703,13 @@ ggplot(subset(tasas_de_actividad,
   facet_wrap(educacion_ordenada~.)+scale_color_uchicago()+theme_tufte()
 ```
 
+Referencias  
+
+H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.  
+Jeffrey B. Arnold (2018). ggthemes: Extra Themes, Scales and Geoms for 'ggplot2'. R package version 4.0.1. https://CRAN.R-project.org/package=ggthemes  
+Julien Barnier, François Briatte and Joseph Larmarange (2018). questionr: Functions to Make Surveys Processing Easier. R package version 0.7.0. https://CRAN.R-project.org/package=questionr
+Nan Xiao (2018). ggsci: Scientific Journal and Sci-Fi Themed Color Palette  for 'ggplot2'. R package version 2.9. https://CRAN.R-project.org/package=ggsci  
+R Core Team (2018). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.  
+R Core Team (2019). foreign: Read Data Stored by 'Minitab', 'S', 'SAS', 'SPSS', 'Stata', 'Systat', 'Weka', 'dBase', .... R package version 0.8-73. https://CRAN.R-project.org/package=foreign  
+RStudio Team (2018). RStudio: Integrated Development for R. RStudio, Inc., Boston, MA URL http://www.rstudio.com/.  
+Tufte, E. R. (2003). Visual Explanations: Images and Quantities, Evidence and Narrative (6th ed.). Graphics Press. Retrieved from http://www.amazon.com/Visual-Explanations-Quantities-Evidence-Narrative/dp/B0045SIJ4C
